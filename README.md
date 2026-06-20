@@ -53,6 +53,7 @@ Get a shell in the box: `container exec -it <name> bash`, or over the tailnet:
 | `lib.sh` | env-driven config + `.env` loader |
 | `00`–`04` | prereqs / build / run / tailscale-up / verify |
 | `test.sh` | canonical re-runnable health check (run after any change) |
+| `builder-stop.sh` | optional/manual: stop the BuildKit builder to free ~2 GB RAM |
 | `CLAUDE.md` | working conventions (scripted/portable/documented) |
 
 ## Notes
