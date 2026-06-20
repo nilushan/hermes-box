@@ -8,7 +8,7 @@ binding: follow them unless the user explicitly says otherwise for a given task.
 ```
 image/    build context (Dockerfile + entrypoint.sh)
 lib/      common.sh — env-driven config + .env loader
-scripts/  lifecycle: 00–04 + test.sh + builder-stop.sh
+scripts/  lifecycle: 00–04 + test.sh + boot.sh + autostart-*.sh + builder-stop.sh
 ```
 Scripts source config via `source "$(dirname "$0")/../lib/common.sh"`. Run scripts as
 `./scripts/<name>.sh` from the repo root.

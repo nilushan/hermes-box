@@ -63,8 +63,25 @@ Get a shell in the box: `container exec -it <name> bash`, or over the tailnet:
 | `lib/common.sh` | env-driven config + `.env` loader |
 | `scripts/00`–`04` | prereqs / build / run / tailscale-up / verify |
 | `scripts/test.sh` | canonical re-runnable health check (run after any change) |
+| `scripts/boot.sh` | idempotent "ensure box is up" (start-or-create); used by autostart |
+| `scripts/autostart-install.sh` | install launchd agent → box auto-starts at login |
+| `scripts/autostart-uninstall.sh` | remove the launchd autostart agent |
 | `scripts/builder-stop.sh` | optional/manual: stop the BuildKit builder to free ~2 GB RAM |
 | `CLAUDE.md` | working conventions (scripted/portable/documented) |
+
+## Auto-start on boot
+
+A launchd LaunchAgent runs `scripts/boot.sh` at login (Apple `container` is
+user-scoped, so this is a per-user agent, not a system daemon):
+
+```bash
+./scripts/autostart-install.sh     # box auto-starts at login from now on
+./scripts/autostart-uninstall.sh   # stop auto-starting (does not stop the box)
+```
+
+`boot.sh` is idempotent: running → no-op; stopped → `container start`; missing →
+`02-run.sh`. Logs to `autostart.log`. Note: a LaunchAgent runs at **login**, so on a
+headless Mac mini enable auto-login (or stays-logged-in) for true post-reboot start.
 
 ## Notes
 
