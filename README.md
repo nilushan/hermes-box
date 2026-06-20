@@ -11,6 +11,12 @@ grants via `--cap-add`. There is no systemd; a small `entrypoint.sh` brings up
 Everything is **portable**: no hardcoded paths or usernames. Settings come from env
 vars with defaults derived from the current user/host, overridable via `.env`.
 
+## Conventions
+
+All work here is **scripted, idempotent, and documented** — no manual mutation of the
+box. Updates and tests go through committed scripts; `./test.sh` is the canonical
+check. See [`CLAUDE.md`](CLAUDE.md) for the full rules.
+
 ## Run order
 
 ```bash
@@ -46,6 +52,8 @@ Get a shell in the box: `container exec -it <name> bash`, or over the tailnet:
 | `entrypoint.sh` | creates box user from env, starts `tailscaled`, holds open |
 | `lib.sh` | env-driven config + `.env` loader |
 | `00`–`04` | prereqs / build / run / tailscale-up / verify |
+| `test.sh` | canonical re-runnable health check (run after any change) |
+| `CLAUDE.md` | working conventions (scripted/portable/documented) |
 
 ## Notes
 
