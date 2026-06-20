@@ -1,0 +1,8 @@
+# Runtime-synced data (mutagen mirror of the box home), not source
+box-home/
+
+# Persistent container state (tailscale identity, etc.)
+state/
+
+# Local logs
+*.log
