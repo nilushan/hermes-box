@@ -1,8 +1,11 @@
-# Runtime-synced data (mutagen mirror of the box home), not source
-box-home/
+# Per-machine config (use .env.example as a template)
+.env
 
 # Persistent container state (tailscale identity, etc.)
 state/
+
+# Obsolete: mutagen mirror from the container-machine variant
+box-home/
 
 # Local logs
 *.log

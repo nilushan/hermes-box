@@ -1,29 +1,20 @@
 FROM ubuntu:24.04
-ENV container=container
 
-# Base packages for an interactive machine + ssh.
+# Tailscale + basic tooling. No systemd: this image runs under `container run`,
+# where a small entrypoint supervises tailscaled directly. `container run` gives us
+# real --volume bind mounts (which `container machine` cannot) at the cost of no
+# systemd, so we bring services up ourselves.
+#
+# The box user is created at RUNTIME by the entrypoint from BOX_USER/BOX_UID/BOX_GID
+# env vars — nothing user- or path-specific is baked into the image, so the same
+# image is portable across accounts and machines.
 RUN apt-get update && apt-get install -y \
-      dbus systemd systemd-sysv openssh-server \
-      iproute2 iputils-ping curl ca-certificates sudo vim-tiny \
+      ca-certificates curl iproute2 iputils-ping sudo vim-tiny openssh-client \
  && rm -rf /var/lib/apt/lists/*
 
-# Restore full userland where available. On Ubuntu 24.04 `unminimize` ships as
-# its own package and is not present in the minimized base image, so guard it
-# rather than letting the build fail (the only change from Apple's recipe).
-RUN apt-get update \
- && (command -v unminimize >/dev/null 2>&1 || apt-get install -y unminimize || true) \
- && (command -v unminimize >/dev/null 2>&1 && yes | unminimize || echo "unminimize unavailable; skipping") \
- && rm -rf /var/lib/apt/lists/*
-
-# Tailscale installed now; you authenticate interactively at first boot.
 RUN curl -fsSL https://tailscale.com/install.sh | sh
 
-RUN >/etc/machine-id && >/var/lib/dbus/machine-id \
- && systemctl set-default multi-user.target \
- && systemctl enable ssh \
- && systemctl enable tailscaled \
- && systemctl mask \
-      dev-hugepages.mount \
-      sys-fs-fuse-connections.mount \
-      systemd-update-utmp.service \
-      console-getty.service
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
