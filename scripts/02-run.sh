@@ -2,7 +2,7 @@
 # Step 2 — run the box with `container run`: real --volume bind mounts, plus the
 # capabilities Tailscale needs to create its TUN interface. Replaces the old
 # `container machine create` (which could not bind-mount arbitrary folders).
-source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/../lib/common.sh"
 
 mkdir -p "${HERMES_HOME}"
 container volume inspect "${TS_STATE_VOLUME}" >/dev/null 2>&1 || container volume create "${TS_STATE_VOLUME}" >/dev/null

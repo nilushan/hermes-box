@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Step 4 — verify: Tailscale status, SSH in from the Mac over the tailnet, and
 # prove the --volume mount is a real bidirectional bind mount (no sync involved).
-source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/../lib/common.sh"
 
 echo "=== tailscale status (in box) ==="
 container exec "${NAME}" tailscale status

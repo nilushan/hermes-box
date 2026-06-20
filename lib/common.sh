@@ -4,10 +4,14 @@
 # user/host — no hardcoded paths or usernames, so these run anywhere.
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve repo layout from this file's location (lib/common.sh), so scripts work
+# regardless of the directory they're invoked from.
+LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${LIB_DIR}/.." && pwd)"
+IMAGE_DIR="${REPO_ROOT}/image"   # docker build context (Dockerfile + entrypoint.sh)
 
-# Optional per-machine overrides (gitignored). See .env.example.
-if [ -f "${SCRIPT_DIR}/.env" ]; then set -a; . "${SCRIPT_DIR}/.env"; set +a; fi
+# Optional per-machine overrides (gitignored, at repo root). See .env.example.
+if [ -f "${REPO_ROOT}/.env" ]; then set -a; . "${REPO_ROOT}/.env"; set +a; fi
 
 IMAGE_TAG="${HERMES_BOX_IMAGE:-local/hermes-box:latest}"
 NAME="${HERMES_BOX_NAME:-hermes-box}"

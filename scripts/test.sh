@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Canonical, re-runnable, non-destructive health check for the hermes-box.
 # Run after any change. Exits non-zero if any check fails.
-source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/../lib/common.sh"
 
 fail=0
 pass() { echo "PASS: $1"; }

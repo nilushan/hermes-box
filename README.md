@@ -11,21 +11,31 @@ grants via `--cap-add`. There is no systemd; a small `entrypoint.sh` brings up
 Everything is **portable**: no hardcoded paths or usernames. Settings come from env
 vars with defaults derived from the current user/host, overridable via `.env`.
 
+## Layout
+
+```
+image/      build context — Dockerfile + entrypoint.sh
+lib/        common.sh — env-driven config + .env loader
+scripts/    lifecycle: 00–04, test.sh, builder-stop.sh
+README.md  CLAUDE.md  .env.example   (root: docs + config)
+```
+
 ## Conventions
 
 All work here is **scripted, idempotent, and documented** — no manual mutation of the
-box. Updates and tests go through committed scripts; `./test.sh` is the canonical
+box. Updates and tests go through committed scripts; `scripts/test.sh` is the canonical
 check. See [`CLAUDE.md`](CLAUDE.md) for the full rules.
 
 ## Run order
 
 ```bash
-cp .env.example .env     # optional: set HERMES_BOX_USER / HERMES_BOX_HOME / etc.
-./00-prereqs.sh          # container CLI up
-./01-build.sh            # build local/hermes-box:latest
-./02-run.sh              # container run with caps + volumes
-./03-tailscale-up.sh     # open the printed URL to authenticate (first run only)
-./04-verify.sh           # status + SSH from the Mac + prove the bind mount
+cp .env.example .env            # optional: set HERMES_BOX_USER / HERMES_BOX_HOME / etc.
+./scripts/00-prereqs.sh         # container CLI up
+./scripts/01-build.sh           # build local/hermes-box:latest from image/
+./scripts/02-run.sh             # container run with caps + volumes
+./scripts/03-tailscale-up.sh    # open the printed URL to authenticate (first run only)
+./scripts/04-verify.sh          # status + SSH from the Mac + prove the bind mount
+./scripts/test.sh               # canonical health check
 ```
 
 Get a shell in the box: `container exec -it <name> bash`, or over the tailnet:
@@ -48,12 +58,12 @@ Get a shell in the box: `container exec -it <name> bash`, or over the tailnet:
 
 | File | What |
 |---|---|
-| `Dockerfile` | Ubuntu 24.04 + Tailscale + entrypoint (no user/path baked in) |
-| `entrypoint.sh` | creates box user from env, starts `tailscaled`, holds open |
-| `lib.sh` | env-driven config + `.env` loader |
-| `00`–`04` | prereqs / build / run / tailscale-up / verify |
-| `test.sh` | canonical re-runnable health check (run after any change) |
-| `builder-stop.sh` | optional/manual: stop the BuildKit builder to free ~2 GB RAM |
+| `image/Dockerfile` | Ubuntu 24.04 + Tailscale + entrypoint (no user/path baked in) |
+| `image/entrypoint.sh` | creates box user from env, starts `tailscaled`, holds open |
+| `lib/common.sh` | env-driven config + `.env` loader |
+| `scripts/00`–`04` | prereqs / build / run / tailscale-up / verify |
+| `scripts/test.sh` | canonical re-runnable health check (run after any change) |
+| `scripts/builder-stop.sh` | optional/manual: stop the BuildKit builder to free ~2 GB RAM |
 | `CLAUDE.md` | working conventions (scripted/portable/documented) |
 
 ## Notes
@@ -62,8 +72,8 @@ Get a shell in the box: `container exec -it <name> bash`, or over the tailnet:
   files, instantly, both ways. (The earlier `container machine` + mutagen approach
   is in git history; `container machine` can only mount the Mac home, not arbitrary
   folders, which is why this rebuild moved to `container run`.)
-- **Tailscale identity persists** in `HERMES_BOX_STATE`, so after a restart the box
-  reconnects (with Tailscale SSH) automatically — no re-auth.
+- **Tailscale identity persists** in the named volume `HERMES_BOX_STATE_VOLUME`, so
+  after a restart/recreate the box reconnects (with Tailscale SSH) — no re-auth.
 - **One-time Tailscale ACL** (admin console → Access Controls) must allow SSH to your
   own machines:
   ```json
