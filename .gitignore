@@ -1,11 +1,5 @@
 # Per-machine config (use .env.example as a template)
 .env
 
-# Persistent container state (tailscale identity, etc.)
-state/
-
-# Obsolete: mutagen mirror from the container-machine variant
-box-home/
-
 # Local logs
 *.log
