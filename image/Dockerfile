@@ -1,20 +1,26 @@
-FROM ubuntu:24.04
+# The box IS the Hermes runtime: extend the official Hermes image with Tailscale,
+# supervised by the image's existing s6-overlay (Debian 13 base). `container run`
+# gives real --volume bind mounts; --cap-add lets tailscaled create its TUN.
+FROM nousresearch/hermes-agent:latest
 
-# Tailscale + basic tooling. No systemd: this image runs under `container run`,
-# where a small entrypoint supervises tailscaled directly. `container run` gives us
-# real --volume bind mounts (which `container machine` cannot) at the cost of no
-# systemd, so we bring services up ourselves.
-#
-# The box user is created at RUNTIME by the entrypoint from BOX_USER/BOX_UID/BOX_GID
-# env vars — nothing user- or path-specific is baked into the image, so the same
-# image is portable across accounts and machines.
-RUN apt-get update && apt-get install -y \
-      ca-certificates curl iproute2 iputils-ping sudo vim-tiny openssh-client \
- && rm -rf /var/lib/apt/lists/*
+# Tailscale static binaries (container-friendly; no systemd/apt-postinst issues),
+# plus the net tools tailscaled needs to manage the TUN/firewall.
+ARG TAILSCALE_VERSION=1.98.4
+ARG TARGETARCH=arm64
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl ca-certificates iptables iproute2 \
+ && curl -fsSL "https://pkgs.tailscale.com/stable/tailscale_${TAILSCALE_VERSION}_${TARGETARCH}.tgz" -o /tmp/ts.tgz \
+ && tar -xzf /tmp/ts.tgz -C /tmp \
+ && mv "/tmp/tailscale_${TAILSCALE_VERSION}_${TARGETARCH}/tailscale"  /usr/local/bin/tailscale \
+ && mv "/tmp/tailscale_${TAILSCALE_VERSION}_${TARGETARCH}/tailscaled" /usr/local/bin/tailscaled \
+ && rm -rf /tmp/ts.tgz "/tmp/tailscale_${TAILSCALE_VERSION}_${TARGETARCH}" /var/lib/apt/lists/*
 
-RUN curl -fsSL https://tailscale.com/install.sh | sh
+# Add tailscaled as an s6-supervised longrun service alongside Hermes (main-hermes,
+# dashboard). It restarts if it dies; state lives in the /var/lib/tailscale volume.
+COPY s6/tailscaled/type /etc/s6-overlay/s6-rc.d/tailscaled/type
+COPY s6/tailscaled/run  /etc/s6-overlay/s6-rc.d/tailscaled/run
+RUN chmod +x /etc/s6-overlay/s6-rc.d/tailscaled/run \
+ && touch /etc/s6-overlay/s6-rc.d/user/contents.d/tailscaled
 
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+# Entrypoint (/init) and CMD are inherited from the Hermes image; we pass
+# `gateway run` at `container run` time, same as run-hermes.sh.

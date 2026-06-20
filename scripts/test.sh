@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Canonical, re-runnable, non-destructive health check for the hermes-box.
-# Run after any change. Exits non-zero if any check fails.
+# Canonical, re-runnable, non-destructive health check for the hermes-box
+# (Hermes gateway + Tailscale). Run after any change. Exits non-zero on any failure.
 source "$(dirname "$0")/../lib/common.sh"
 
 fail=0
@@ -17,20 +17,28 @@ ck "tailscaled state store healthy" \
    "! container exec ${NAME} tailscale status 2>&1 | grep -qi 'state store'"
 ck "tailscale is up (not logged out/stopped)" \
    "! container exec ${NAME} tailscale status 2>&1 | grep -Eqi 'logged out|Tailscale is stopped'"
-ck "home is mounted (${HERMES_HOME})" \
-   "container exec ${NAME} test -d /home/${BOX_USER}"
 
-# Real bidirectional volume mount.
+# Hermes gateway answers HTTP on the gateway port (the dashboard UI is served here).
+ck "Hermes gateway responds on :${GATEWAY_PORT}" \
+   "test \"\$(curl -s -o /dev/null -m 8 -w '%{http_code}' http://localhost:${GATEWAY_PORT}/ )\" != 000"
+
+# Data + work bind mounts present.
+ck "Hermes data mounted (/opt/data)" \
+   "container exec ${NAME} test -e /opt/data"
+ck "work folder mounted (/home/nilushan)" \
+   "container exec ${NAME} test -d /home/nilushan"
+
+# Real bidirectional volume mount (work folder).
 STAMP=".hbox-test-$$"
-echo "mac-$$" > "${HERMES_HOME}/${STAMP}"
+echo "mac-$$" > "${HERMES_WORK_DIR}/${STAMP}"
 ck "box reads Mac-written file" \
-   "container exec ${NAME} grep -q 'mac-$$' /home/${BOX_USER}/${STAMP}"
-container exec "${NAME}" sh -c "echo box-$$ >> /home/${BOX_USER}/${STAMP}" 2>/dev/null || true
+   "container exec ${NAME} grep -q 'mac-$$' /home/nilushan/${STAMP}"
+container exec "${NAME}" sh -c "echo box-$$ >> /home/nilushan/${STAMP}" 2>/dev/null || true
 ck "Mac reads box-written append" \
-   "grep -q 'box-$$' ${HERMES_HOME}/${STAMP}"
-rm -f "${HERMES_HOME}/${STAMP}"
+   "grep -q 'box-$$' ${HERMES_WORK_DIR}/${STAMP}"
+rm -f "${HERMES_WORK_DIR}/${STAMP}"
 
-# SSH over the tailnet (best-effort; needs the ACL + correct TS hostname).
+# SSH over the tailnet (needs the ACL + correct TS hostname).
 ck "SSH over tailnet (${BOX_USER}@${TS_HOSTNAME})" \
    "ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 ${BOX_USER}@${TS_HOSTNAME} true"
 

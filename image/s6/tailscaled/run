@@ -1,0 +1,8 @@
+#!/command/with-contenv sh
+# s6-overlay longrun: supervise tailscaled. State persists in the /var/lib/tailscale
+# volume so the box keeps its tailnet identity (and Tailscale SSH) across restarts.
+mkdir -p /run/tailscale /var/lib/tailscale
+exec /usr/local/bin/tailscaled \
+  --state=/var/lib/tailscale/tailscaled.state \
+  --socket=/run/tailscale/tailscaled.sock \
+  --port=41641

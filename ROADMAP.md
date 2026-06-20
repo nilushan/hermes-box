@@ -6,44 +6,34 @@ in a fresh session: `./scripts/test.sh`.
 
 ## Vision
 
-A small Linux box on the Mac (Apple `container`), reachable only over the Tailscale
-tailnet (SSH from anywhere, nothing on LAN/internet), with a host work folder mounted
-as its home, fully reproducible from this repo, that eventually supports Hermes.
-
-It is separate from the existing `hermes` container (`nousresearch/hermes-agent`,
-run by `~/AiInfra/run-hermes.sh`, already under launchd).
+A single box on the Mac (Apple `container`) that **is the Hermes runtime** — runs the
+Hermes gateway *and* Tailscale, reachable only over the tailnet (SSH from anywhere,
+nothing on LAN/internet), with data + work folders bind-mounted from a consolidated
+backup-friendly root, fully reproducible from this repo. Supersedes the old standalone
+`hermes` container / `run-hermes.sh`.
 
 ## Done
 
-- [x] Box on `container run` — real bidirectional `--volume` bind mounts
-      (`container machine` can only mount the Mac home; rejected — see git `b76fdd5`).
-- [x] Tailscale SSH via `--cap-add CAP_NET_ADMIN/CAP_NET_RAW`; `entrypoint.sh` starts
-      tailscaled + creates the box user from env (no systemd).
-- [x] Tailscale identity persisted in a named volume (`<name>-tsstate`) — survives
-      recreate with no re-auth (bind mounts break tailscaled's state-store chmod).
-- [x] Portable: all config via env with defaults from `id`/`$HOME`, overridable via
-      gitignored `.env` (`.env.example` is the template). No hardcoded paths.
-- [x] By-role layout: `image/`, `lib/`, `scripts/`.
-- [x] Scripted, idempotent, documented; `scripts/test.sh` is the canonical check.
-- [x] Tailnet name `hermes-box` reclaimed (`ssh nilushan@hermes-box`).
-- [x] Auto-start at login via launchd (`scripts/autostart-install.sh`).
+- [x] Box on `container run` — real bidirectional `--volume` bind mounts.
+- [x] **Box is the Hermes runtime**: image `FROM nousresearch/hermes-agent` + Tailscale
+      added as an s6-overlay service; one container runs gateway + dashboard + tailscaled.
+- [x] Tailscale via `--cap-add CAP_NET_ADMIN/CAP_NET_RAW`; identity in a named volume
+      (`<name>-tsstate`) — recreate with no re-auth.
+- [x] **Consolidated data root** `~/AiInfra/hermes-box-data/` (`.hermes/` + `hermes-home/`),
+      migrated off `~/.hermes` and `~/AiInfra/hermes-home` (`scripts/migrate-data.sh`).
+- [x] **Backup/restore** of the data root (`scripts/backup.sh` / `restore.sh`, lean tar).
+- [x] Old standalone `hermes` retired: container removed, `com.ownstack.hermes` launchd
+      agent disabled (`.plist.disabled`), Pi-era tailscale leftovers in `.hermes` removed.
+- [x] Portable (env + `.env`), by-role layout, scripted/tested, name `hermes-box`,
+      launchd auto-start at login.
 
-## Next decision (blocks Phase 2)
+## Remaining phases
 
-**What is hermes-box *for* relative to the `hermes` container?** Pick one:
-
-1. **Hermes runtime** — fold Hermes into hermes-box (run gateway here, import
-   `~/.hermes`, `--volume ~/.hermes:/opt/data`, `--publish 9119/8642`). Likely
-   supersedes `run-hermes.sh`. One box: Tailscale access + Hermes + work folders.
-2. **Hermes's sandboxed workspace** — keep the `hermes` container separate; hermes-box
-   is the isolated env the agent SSHes into to run arbitrary commands (the original
-   "runs arbitrary commands" intent).
-
-## Remaining phases (after the decision)
-
-- [ ] Phase 2 — Hermes per the decision above (data volume, import state, ports).
-- [ ] Caddy / reverse proxy for any HTTP services.
-- [ ] Backups — `restic` → Cloudflare R2 for `hermes-home` (+ key state); tested restore.
+- [ ] **Backups offsite** — `restic` → Cloudflare R2 (versioned, offsite). Local tar
+      snapshots exist but the Mac disk is tight; this is the real backup. Needs R2 creds.
+- [ ] **Free Mac disk space** — the volume runs ~90–96% full; the fat Hermes image needs
+      headroom to rebuild. Operational, but it blocks `01-build.sh` when too full.
+- [ ] Caddy / reverse proxy if services need TLS / clean hostnames.
 
 ## How to resume in a new session
 

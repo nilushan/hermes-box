@@ -6,9 +6,11 @@ binding: follow them unless the user explicitly says otherwise for a given task.
 ## 0. Layout
 
 ```
-image/    build context (Dockerfile + entrypoint.sh)
+image/    build context: Dockerfile (FROM nousresearch/hermes-agent + Tailscale)
+          + s6/tailscaled/ (s6-overlay service)
 lib/      common.sh — env-driven config + .env loader
-scripts/  lifecycle: 00–04 + test.sh + boot.sh + autostart-*.sh + builder-stop.sh
+scripts/  00–04, test.sh, migrate-data.sh, backup.sh, restore.sh,
+          boot.sh, autostart-*.sh, builder-stop.sh
 ```
 Scripts source config via `source "$(dirname "$0")/../lib/common.sh"`. Run scripts as
 `./scripts/<name>.sh` from the repo root.
@@ -46,7 +48,10 @@ Scripts source config via `source "$(dirname "$0")/../lib/common.sh"`. Run scrip
 
 ## 4. Architecture (current)
 
-- `container run` (not `container machine`) → real `--volume` bind mounts.
-- Tailscale via `--cap-add CAP_NET_ADMIN CAP_NET_RAW`; `entrypoint.sh` creates the
-  user and starts `tailscaled` (no systemd). Tailscale state in a **named volume**
-  (bind mounts break its state-store `chmod`).
+- The box IS the Hermes runtime: image `FROM nousresearch/hermes-agent` + Tailscale as
+  an s6-overlay service. One `container run` container = gateway + dashboard + tailscaled.
+- `container run` (not `container machine`) → real `--volume` bind mounts;
+  `--cap-add CAP_NET_ADMIN CAP_NET_RAW` for tailscaled's TUN.
+- Data root `~/AiInfra/hermes-box-data/` (`.hermes`→/opt/data, `hermes-home`→/home/nilushan).
+  Tailscale state in a **named volume** (bind mounts break its state-store `chmod`).
+- Heads-up: the Hermes image is large — keep disk headroom or `01-build.sh` can't import.
