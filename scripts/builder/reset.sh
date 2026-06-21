@@ -3,7 +3,7 @@
 # next `container build` recreates it. Run this before a big build when disk is tight
 # (the Hermes-based image is large and `container build` needs headroom to import,
 # else it fails with "failed to extract archive").
-source "$(dirname "$0")/../lib/common.sh"
+source "$(dirname "$0")/../../lib/common.sh"
 
 echo "Disk before:"; df -h /System/Volumes/Data 2>/dev/null | awk 'NR==1||/Data/'
 echo "Deleting BuildKit builder (force)..."

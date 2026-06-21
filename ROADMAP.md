@@ -21,7 +21,7 @@ backup-friendly root, fully reproducible from this repo. Supersedes the old stan
       (`<name>-tsstate`) — recreate with no re-auth.
 - [x] **Consolidated data root** `~/AiInfra/hermes-box-data/` (`.hermes/` + `hermes-home/`),
       migrated off `~/.hermes` and `~/AiInfra/hermes-home` (`scripts/migrate-data.sh`).
-- [x] **Backup/restore** of the data root (`scripts/backup.sh` / `restore.sh`, lean tar).
+- [x] **Backup/restore** of the data root (`scripts/backup/backup.sh` / `restore.sh`, lean tar).
 - [x] Old standalone `hermes` retired: container removed, `com.ownstack.hermes` launchd
       agent disabled (`.plist.disabled`), Pi-era tailscale leftovers in `.hermes` removed.
 - [x] Portable (env + `.env`), by-role layout, scripted/tested, name `hermes-box`,
@@ -38,7 +38,7 @@ backup-friendly root, fully reproducible from this repo. Supersedes the old stan
 ## Remaining phases
 
 - [ ] **Free Mac disk space** — the volume runs ~90% full; the fat Hermes image needs
-      headroom to rebuild. `scripts/builder-reset.sh` reclaims the BuildKit cache before
+      headroom to rebuild. `scripts/builder/reset.sh` reclaims the BuildKit cache before
       a build, but the Mac is genuinely tight.
 - [ ] (Deferred, not wanted now) host the `sites/` (ownstack, tanglinlaw) — Astro builds.
 - [ ] Bake `mkdocs` into the image so the wiki can rebuild in-box (currently host-built).

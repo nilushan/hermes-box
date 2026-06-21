@@ -5,7 +5,7 @@
 #
 # Token needed (dash.cloudflare.com > My Profile > API Tokens > Create Token > Custom):
 #   Permission: Account > Workers R2 Storage > Edit   (scoped to your account)
-source "$(dirname "$0")/../lib/common.sh"
+source "$(dirname "$0")/../../lib/common.sh"
 
 CFENV="${REPO_ROOT}/cf.env"
 [ -f "${CFENV}" ] || { echo "missing ${CFENV} — cp cf.env.example cf.env and fill it" >&2; exit 1; }
@@ -55,4 +55,4 @@ AWS_SECRET_ACCESS_KEY=${SECRET}
 AWS_DEFAULT_REGION=auto
 EOF
 echo "Wrote ${REPO_ROOT}/restic.env  (repo: ${REPO})"
-echo "Next: ./scripts/restic-backup.sh"
+echo "Next: ./scripts/backup/restic-backup.sh"

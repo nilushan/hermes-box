@@ -3,7 +3,7 @@
 #   snapshot: snapshot id, or 'latest' (default)
 #   target:   restore destination (default: ~/hermes-box-restore) — NOT the live data
 #             root, so you can review before swapping in.
-source "$(dirname "$0")/../lib/common.sh"
+source "$(dirname "$0")/../../lib/common.sh"
 
 ENVF="${REPO_ROOT}/restic.env"
 [ -f "${ENVF}" ] || { echo "missing ${ENVF}" >&2; exit 1; }

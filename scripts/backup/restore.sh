@@ -3,7 +3,7 @@
 # No arg = most recent snapshot in BACKUP_DIR. The box must be stopped first so the
 # files aren't in use. The current data root is moved aside to *.pre-restore-<ts>
 # before extracting, so a bad restore is recoverable.
-source "$(dirname "$0")/../lib/common.sh"
+source "$(dirname "$0")/../../lib/common.sh"
 
 archive="${1:-$(ls -1t "${BACKUP_DIR}"/hermes-box-data-*.tar.gz 2>/dev/null | head -1)}"
 [ -n "${archive}" ] && [ -f "${archive}" ] || { echo "no archive found (looked in ${BACKUP_DIR})" >&2; exit 1; }

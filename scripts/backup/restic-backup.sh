@@ -2,7 +2,7 @@
 # Offsite backup of the data root to restic/Cloudflare R2 (encrypted, versioned).
 # Runs on the Mac (the data lives on the host). Inits the repo on first run, backs up,
 # then prunes per the retention policy. Reads credentials from restic.env (gitignored).
-source "$(dirname "$0")/../lib/common.sh"
+source "$(dirname "$0")/../../lib/common.sh"
 
 ENVF="${REPO_ROOT}/restic.env"
 [ -f "${ENVF}" ] || { echo "missing ${ENVF} — cp restic.env.example restic.env and fill it" >&2; exit 1; }

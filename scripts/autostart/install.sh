@@ -2,11 +2,11 @@
 # Install a launchd LaunchAgent that runs scripts/boot.sh at login, so the box
 # auto-starts after a Mac reboot. Per-user agent (Apple `container` is user-scoped).
 # Idempotent: re-running rewrites and reloads the agent.
-source "$(dirname "$0")/../lib/common.sh"
+source "$(dirname "$0")/../../lib/common.sh"
 
 LABEL="${HERMES_BOX_AUTOSTART_LABEL:-local.${NAME}.boot}"
 PLIST="${HOME}/Library/LaunchAgents/${LABEL}.plist"
-BOOT="${REPO_ROOT}/scripts/boot.sh"
+BOOT="${REPO_ROOT}/scripts/autostart/boot.sh"
 LOG="${REPO_ROOT}/autostart.log"
 DOMAIN="gui/$(id -u)"
 

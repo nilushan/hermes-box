@@ -3,7 +3,7 @@
 # as a gzip tarball in BACKUP_DIR (kept OUTSIDE the data root). The Tailscale identity
 # (named volume) is intentionally NOT included — it's re-authable. restic->Cloudflare
 # R2 is the planned offsite/versioned follow-up.
-source "$(dirname "$0")/../lib/common.sh"
+source "$(dirname "$0")/../../lib/common.sh"
 
 [ -d "${DATA_ROOT}" ] || { echo "no data root at ${DATA_ROOT}" >&2; exit 1; }
 ts="${1:-$(date +%Y%m%d-%H%M%S)}"

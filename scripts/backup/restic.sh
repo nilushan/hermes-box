@@ -6,7 +6,7 @@
 #   ./scripts/restic.sh ls latest /Users/.../hermes-box-data/hermes-home/wiki
 #   ./scripts/restic.sh stats
 #   ./scripts/restic.sh find self-hosting-setup.md
-source "$(dirname "$0")/../lib/common.sh"
+source "$(dirname "$0")/../../lib/common.sh"
 
 ENVF="${REPO_ROOT}/restic.env"
 [ -f "${ENVF}" ] || { echo "missing ${ENVF} — run ./scripts/cf-r2-setup.sh first" >&2; exit 1; }

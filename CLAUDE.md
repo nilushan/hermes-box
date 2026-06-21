@@ -6,14 +6,17 @@ binding: follow them unless the user explicitly says otherwise for a given task.
 ## 0. Layout
 
 ```
-image/    build context: Dockerfile (FROM nousresearch/hermes-agent + Tailscale)
-          + s6/tailscaled/ (s6-overlay service)
+image/    build context: Dockerfile (FROM nousresearch/hermes-agent + Tailscale + Caddy)
+          + s6/{tailscaled,caddy}/ + caddy/Caddyfile
 lib/      common.sh — env-driven config + .env loader
-scripts/  00–04, test.sh, migrate-data.sh, backup.sh, restore.sh,
-          boot.sh, autostart-*.sh, builder-stop.sh
+scripts/  00–04, test.sh, migrate-data.sh          # lifecycle (top level)
+  backup/     backup/restore (tar) + cf-r2-setup + restic* + restic-schedule-*
+  autostart/  boot.sh, install.sh, uninstall.sh    # launchd at login
+  builder/    stop.sh, reset.sh                     # BuildKit RAM/disk
 ```
-Scripts source config via `source "$(dirname "$0")/../lib/common.sh"`. Run scripts as
-`./scripts/<name>.sh` from the repo root.
+Scripts source config via `common.sh` — top-level scripts use `../lib/common.sh`,
+subdir scripts use `../../lib/common.sh`. Cross-script references use `${REPO_ROOT}`.
+Run as `./scripts/<name>.sh` or `./scripts/<group>/<name>.sh` from the repo root.
 
 ## 1. Scripted, reproducible, documented — no manual mutation
 

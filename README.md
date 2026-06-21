@@ -18,9 +18,10 @@ data root. Supersedes the old standalone `hermes` container / `run-hermes.sh`.
 ```
 image/      build context — Dockerfile + s6/{tailscaled,caddy}/ + caddy/Caddyfile
 lib/        common.sh — env-driven config + .env loader
-scripts/    00–04, test.sh, migrate-data.sh, backup.sh, restore.sh,
-            cf-r2-setup.sh, restic-backup.sh, restic-restore.sh, restic-snapshots.sh,
-            restic-schedule-*.sh, boot.sh, autostart-*.sh, builder-stop.sh, builder-reset.sh
+scripts/    00–04, test.sh, migrate-data.sh           # lifecycle
+  backup/   backup.sh restore.sh cf-r2-setup.sh restic*.sh restic-schedule-*.sh
+  autostart/  boot.sh install.sh uninstall.sh         # launchd at login
+  builder/    stop.sh reset.sh                         # BuildKit RAM/disk
 README.md  CLAUDE.md  ROADMAP.md  .env.example  cf.env.example  restic.env.example
 ```
 
@@ -77,11 +78,11 @@ so it's excluded from data backups.
 **Offsite (restic → Cloudflare R2)** — encrypted, versioned, the real backup:
 ```bash
 cp cf.env.example cf.env           # fill CF_API_TOKEN (R2 Edit) + CF_ACCOUNT_ID (gitignored)
-./scripts/cf-r2-setup.sh           # creates the R2 bucket + writes restic.env (S3 creds)
-./scripts/restic-backup.sh         # init (first run) + backup + prune (7d/4w/6m retention)
-./scripts/restic-snapshots.sh      # list snapshots + repo size
-./scripts/restic-restore.sh [snap] [target]   # restore (default: latest -> ~/hermes-box-restore)
-./scripts/restic-schedule-install.sh          # launchd: daily backup at 03:00 (uninstall: -uninstall.sh)
+./scripts/backup/cf-r2-setup.sh           # creates the R2 bucket + writes restic.env (S3 creds)
+./scripts/backup/restic-backup.sh         # init (first run) + backup + prune (7d/4w/6m retention)
+./scripts/backup/restic-snapshots.sh      # list snapshots + repo size
+./scripts/backup/restic-restore.sh [snap] [target]   # restore (default: latest -> ~/hermes-box-restore)
+./scripts/backup/restic-schedule-install.sh          # launchd: daily backup at 03:00 (uninstall: -uninstall.sh)
 ```
 Cloudflare provisioning is scripted: `cf-r2-setup.sh` creates the bucket and derives
 restic's S3 creds from a CF API token (Account > Workers R2 Storage > Edit) in
@@ -90,11 +91,11 @@ gitignored `cf.env`. Secrets live in `cf.env` / `restic.env` (both gitignored).
 Run / inspect anytime (the daily timer also runs `restic-backup.sh` at 03:00).
 `restic.sh` is a wrapper that loads `restic.env` so you don't have to source it:
 ```bash
-./scripts/restic-backup.sh        # back up now
-./scripts/restic.sh snapshots     # list backups
-./scripts/restic.sh ls latest     # list files in the latest snapshot
-./scripts/restic.sh stats         # repo size
-./scripts/restic.sh find <name>   # locate a file across snapshots
+./scripts/backup/restic-backup.sh        # back up now
+./scripts/backup/restic.sh snapshots     # list backups
+./scripts/backup/restic.sh ls latest     # list files in the latest snapshot
+./scripts/backup/restic.sh stats         # repo size
+./scripts/backup/restic.sh find <name>   # locate a file across snapshots
 ```
 (Plain `restic ...` fails with "specify repository location" unless `restic.env` is
 sourced — that's what `restic.sh` does for you.)
@@ -106,8 +107,8 @@ unrecoverable.
 
 **Local (tar snapshot)** — quick stopgap on the same disk:
 ```bash
-./scripts/backup.sh             # timestamped tar.gz into the backups dir
-./scripts/restore.sh [archive]  # restore newest (or named); box must be stopped
+./scripts/backup/backup.sh             # timestamped tar.gz into the backups dir
+./scripts/backup/restore.sh [archive]  # restore newest (or named); box must be stopped
 ```
 Both exclude regenerable caches (`.cache .npm node_modules .playwright`). The Mac disk
 is tight, so prefer restic→R2 over accumulating local snapshots.
@@ -135,24 +136,24 @@ is tight, so prefer restic→R2 over accumulating local snapshots.
 | `lib/common.sh` | env-driven config + `.env` loader |
 | `scripts/00`–`04` | prereqs / build / run / tailscale-up / verify |
 | `scripts/migrate-data.sh` | one-time: consolidate existing data into the data root |
-| `scripts/backup.sh` / `restore.sh` | local tar snapshot / restore of the data root |
-| `scripts/cf-r2-setup.sh` | create the R2 bucket + derive restic S3 creds (from `cf.env`) |
-| `scripts/restic-backup.sh` / `restic-restore.sh` / `restic-snapshots.sh` | offsite backup to R2 |
-| `scripts/restic.sh` | wrapper: run any `restic` command with creds loaded |
-| `scripts/restic-schedule-install.sh` / `-uninstall.sh` | launchd daily restic backup |
+| `scripts/backup/backup.sh` / `restore.sh` | local tar snapshot / restore of the data root |
+| `scripts/backup/cf-r2-setup.sh` | create the R2 bucket + derive restic S3 creds (from `cf.env`) |
+| `scripts/backup/restic-backup.sh` / `restic-restore.sh` / `restic-snapshots.sh` | offsite backup to R2 |
+| `scripts/backup/restic.sh` | wrapper: run any `restic` command with creds loaded |
+| `scripts/backup/restic-schedule-install.sh` / `-uninstall.sh` | launchd daily restic backup |
 | `scripts/test.sh` | canonical re-runnable health check |
-| `scripts/boot.sh` + `autostart-*.sh` | launchd auto-start at login |
-| `scripts/builder-stop.sh` / `builder-reset.sh` | stop / delete BuildKit (free RAM / disk) |
+| `scripts/autostart/{boot,install,uninstall}.sh` | launchd auto-start at login |
+| `scripts/builder/{stop,reset}.sh` | stop / delete BuildKit (free RAM / disk) |
 | `CLAUDE.md` / `ROADMAP.md` | conventions / plan + status |
 
 ## Auto-start on boot
 
-A launchd LaunchAgent runs `scripts/boot.sh` at login (Apple `container` is
+A launchd LaunchAgent runs `scripts/autostart/boot.sh` at login (Apple `container` is
 user-scoped, so this is a per-user agent, not a system daemon):
 
 ```bash
-./scripts/autostart-install.sh     # box auto-starts at login from now on
-./scripts/autostart-uninstall.sh   # stop auto-starting (does not stop the box)
+./scripts/autostart/install.sh     # box auto-starts at login from now on
+./scripts/autostart/uninstall.sh   # stop auto-starting (does not stop the box)
 ```
 
 `boot.sh` is idempotent: running → no-op; stopped → `container start`; missing →
@@ -170,7 +171,7 @@ headless Mac mini enable auto-login (or stays-logged-in) for true post-reboot st
   `tailscaled` service; gateway serves on 9119 (the dashboard UI is served there too).
 - **⚠ Disk**: the Hermes image is large (several GB). Building the derived image needs
   real headroom — keep well clear of a full disk or `container build` fails to import
-  (`failed to extract archive`). `./scripts/builder-stop.sh` and `container builder
+  (`failed to extract archive`). `./scripts/builder/stop.sh` and `container builder
   delete --force` reclaim the BuildKit cache (~8–11 GB).
 - **One-time Tailscale ACL** (admin console → Access Controls) must allow SSH to your
   own machines:

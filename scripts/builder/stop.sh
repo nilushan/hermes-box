@@ -3,7 +3,7 @@
 # are not building. Run MANUALLY when needed; this is deliberately NOT part of the
 # numbered setup sequence and is NOT triggered automatically by any other script.
 # The next `container build` (./01-build.sh) auto-starts the builder again.
-source "$(dirname "$0")/../lib/common.sh"
+source "$(dirname "$0")/../../lib/common.sh"
 
 echo "Builder status:"
 container builder status 2>&1 || true

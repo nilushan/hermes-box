@@ -4,7 +4,7 @@
 #   - already running  -> nothing
 #   - exists, stopped  -> start it (reuses volumes + tailscale identity)
 #   - does not exist   -> create it via 02-run.sh
-source "$(dirname "$0")/../lib/common.sh"
+source "$(dirname "$0")/../../lib/common.sh"
 
 echo "[boot] $(date) ensuring '${NAME}' is up"
 container system start 2>/dev/null || true
@@ -18,5 +18,5 @@ if container inspect "${NAME}" >/dev/null 2>&1; then
   fi
 else
   echo "[boot] '${NAME}' not found; creating"
-  "$(dirname "$0")/02-run.sh"
+  "${REPO_ROOT}/scripts/02-run.sh"
 fi
