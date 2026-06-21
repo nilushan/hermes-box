@@ -62,6 +62,23 @@ fetched at container start (refreshes on restart). Wiki content lives in the mou
 `hermes-home/wiki`; rebuild the static site with `mkdocs build` (mkdocs not yet baked
 into the image). The two `sites/` (ownstack, tanglinlaw) are intentionally **not** hosted.
 
+## Claude Code (in the box)
+
+Claude Code is installed in the box at `/opt/data/.local/bin/claude` and authenticated
+with the Claude **Max subscription** (OAuth). It lives in the persistent `/opt/data`
+volume, so the binary and the login survive container recreates and are included in the
+restic backup (creds encrypted by restic).
+
+```bash
+./scripts/claude-setup.sh   # install-if-missing + verify subscription auth
+```
+Auth is an interactive subscription login (can't be scripted). If it ever shows
+"NOT authenticated":
+```bash
+container exec -it --user hermes hermes-box sh -lc 'export HOME=/opt/data; \
+  /opt/data/.local/bin/claude'   # follow the login prompts (URL + code)
+```
+
 ## Data layout (consolidated, backup-friendly)
 
 ```
@@ -141,6 +158,7 @@ is tight, so prefer restic→R2 over accumulating local snapshots.
 | `scripts/backup/restic-backup.sh` / `restic-restore.sh` / `restic-snapshots.sh` | offsite backup to R2 |
 | `scripts/backup/restic.sh` | wrapper: run any `restic` command with creds loaded |
 | `scripts/backup/restic-schedule-install.sh` / `-uninstall.sh` | launchd daily restic backup |
+| `scripts/claude-setup.sh` | install/verify Claude Code (subscription) in the box |
 | `scripts/test.sh` | canonical re-runnable health check |
 | `scripts/autostart/{boot,install,uninstall}.sh` | launchd auto-start at login |
 | `scripts/builder/{stop,reset}.sh` | stop / delete BuildKit (free RAM / disk) |
