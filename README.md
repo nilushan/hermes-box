@@ -87,14 +87,17 @@ Cloudflare provisioning is scripted: `cf-r2-setup.sh` creates the bucket and der
 restic's S3 creds from a CF API token (Account > Workers R2 Storage > Edit) in
 gitignored `cf.env`. Secrets live in `cf.env` / `restic.env` (both gitignored).
 
-Run / inspect anytime (the daily timer also runs `restic-backup.sh` at 03:00):
+Run / inspect anytime (the daily timer also runs `restic-backup.sh` at 03:00).
+`restic.sh` is a wrapper that loads `restic.env` so you don't have to source it:
 ```bash
 ./scripts/restic-backup.sh        # back up now
-source ./restic.env               # load repo creds for direct restic commands
-restic snapshots                  # list backups
-restic ls latest                  # list files in the latest snapshot
-restic stats                      # repo size
+./scripts/restic.sh snapshots     # list backups
+./scripts/restic.sh ls latest     # list files in the latest snapshot
+./scripts/restic.sh stats         # repo size
+./scripts/restic.sh find <name>   # locate a file across snapshots
 ```
+(Plain `restic ...` fails with "specify repository location" unless `restic.env` is
+sourced — that's what `restic.sh` does for you.)
 Note: in the **R2 console you won't see your files** — restic stores everything as
 encrypted, deduplicated pack files under `data/` (hash names, ~16 MB each), plus
 `index/`, `snapshots/`, `keys/`, `config`. Browse contents via `restic ls`, not the
@@ -135,6 +138,7 @@ is tight, so prefer restic→R2 over accumulating local snapshots.
 | `scripts/backup.sh` / `restore.sh` | local tar snapshot / restore of the data root |
 | `scripts/cf-r2-setup.sh` | create the R2 bucket + derive restic S3 creds (from `cf.env`) |
 | `scripts/restic-backup.sh` / `restic-restore.sh` / `restic-snapshots.sh` | offsite backup to R2 |
+| `scripts/restic.sh` | wrapper: run any `restic` command with creds loaded |
 | `scripts/restic-schedule-install.sh` / `-uninstall.sh` | launchd daily restic backup |
 | `scripts/test.sh` | canonical re-runnable health check |
 | `scripts/boot.sh` + `autostart-*.sh` | launchd auto-start at login |
