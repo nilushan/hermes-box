@@ -30,10 +30,13 @@ backup-friendly root, fully reproducible from this repo. Supersedes the old stan
       serves the **wiki** (`https://<fqdn>/`) and the **Hermes dashboard**
       (`https://<fqdn>:8443/`, Host/Origin rewrite). Replicates the Pi setup.
 
+- [x] **Offsite backups — restic → Cloudflare R2** (encrypted, versioned). CF infra
+      scripted (`cf-r2-setup.sh`: bucket + S3 creds from a CF API token). `restic-backup.sh`
+      (init+backup+prune 7d/4w/6m), `restic-restore.sh`, `restic-snapshots.sh`. Daily
+      launchd timer (`restic-schedule-install.sh`, 03:00). Backup + restore verified.
+
 ## Remaining phases
 
-- [ ] **Backups offsite** — `restic` → Cloudflare R2 (versioned, offsite). Local tar
-      snapshots exist but the Mac disk is tight; this is the real backup. Needs R2 creds.
 - [ ] **Free Mac disk space** — the volume runs ~90% full; the fat Hermes image needs
       headroom to rebuild. `scripts/builder-reset.sh` reclaims the BuildKit cache before
       a build, but the Mac is genuinely tight.

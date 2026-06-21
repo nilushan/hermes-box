@@ -16,5 +16,6 @@ mkdir -p "${TARGET}"
 
 echo "Restoring snapshot '${SNAP}' -> ${TARGET}"
 restic restore "${SNAP}" --target "${TARGET}"
-echo "Done. Review under ${TARGET}; the data root lives at ${DATA_ROOT}."
-echo "To put it live: stop the box (container rm -f ${NAME}), replace ${DATA_ROOT}, run ./scripts/02-run.sh"
+# restic preserves absolute paths, so data lands under ${TARGET}${DATA_ROOT}.
+echo "Done. Restored data is at: ${TARGET}${DATA_ROOT}"
+echo "To put it live: container rm -f ${NAME}; replace ${DATA_ROOT} with the restored copy; ./scripts/02-run.sh"

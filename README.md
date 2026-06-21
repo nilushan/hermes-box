@@ -80,7 +80,11 @@ cp cf.env.example cf.env           # fill CF_API_TOKEN (R2 Edit) + CF_ACCOUNT_ID
 ./scripts/restic-backup.sh         # init (first run) + backup + prune (7d/4w/6m retention)
 ./scripts/restic-snapshots.sh      # list snapshots + repo size
 ./scripts/restic-restore.sh [snap] [target]   # restore (default: latest -> ~/hermes-box-restore)
+./scripts/restic-schedule-install.sh          # launchd: daily backup at 03:00 (uninstall: -uninstall.sh)
 ```
+Cloudflare provisioning is scripted: `cf-r2-setup.sh` creates the bucket and derives
+restic's S3 creds from a CF API token (Account > Workers R2 Storage > Edit) in
+gitignored `cf.env`. Secrets live in `cf.env` / `restic.env` (both gitignored).
 
 **Local (tar snapshot)** — quick stopgap on the same disk:
 ```bash
