@@ -87,6 +87,20 @@ Cloudflare provisioning is scripted: `cf-r2-setup.sh` creates the bucket and der
 restic's S3 creds from a CF API token (Account > Workers R2 Storage > Edit) in
 gitignored `cf.env`. Secrets live in `cf.env` / `restic.env` (both gitignored).
 
+Run / inspect anytime (the daily timer also runs `restic-backup.sh` at 03:00):
+```bash
+./scripts/restic-backup.sh        # back up now
+source ./restic.env               # load repo creds for direct restic commands
+restic snapshots                  # list backups
+restic ls latest                  # list files in the latest snapshot
+restic stats                      # repo size
+```
+Note: in the **R2 console you won't see your files** — restic stores everything as
+encrypted, deduplicated pack files under `data/` (hash names, ~16 MB each), plus
+`index/`, `snapshots/`, `keys/`, `config`. Browse contents via `restic ls`, not the
+console. Keep `RESTIC_PASSWORD` (in `restic.env`) safe — without it the repo is
+unrecoverable.
+
 **Local (tar snapshot)** — quick stopgap on the same disk:
 ```bash
 ./scripts/backup.sh             # timestamped tar.gz into the backups dir
