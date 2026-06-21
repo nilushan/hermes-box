@@ -22,6 +22,12 @@ RUN curl -fsSL "https://github.com/caddyserver/caddy/releases/download/v${CADDY_
  && tar -xzf /tmp/caddy.tgz -C /usr/local/bin caddy \
  && rm -f /tmp/caddy.tgz
 
+# Claude Code (subscription CLI) baked in, so a fresh box has it even without restored
+# data. The OAuth login lives in /opt/data/.claude (persistent volume), not the image.
+# Installs to /usr/local/bin/claude (the image has Node). A data-dir install, if present,
+# shadows this via PATH — both are fine.
+RUN npm install -g @anthropic-ai/claude-code && npm cache clean --force
+
 # s6-supervised services alongside Hermes (main-hermes, dashboard): tailscaled + caddy.
 COPY s6/tailscaled/type /etc/s6-overlay/s6-rc.d/tailscaled/type
 COPY s6/tailscaled/run  /etc/s6-overlay/s6-rc.d/tailscaled/run

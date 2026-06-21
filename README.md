@@ -64,10 +64,11 @@ into the image). The two `sites/` (ownstack, tanglinlaw) are intentionally **not
 
 ## Claude Code (in the box)
 
-Claude Code is installed in the box at `/opt/data/.local/bin/claude` and authenticated
-with the Claude **Max subscription** (OAuth). It lives in the persistent `/opt/data`
-volume, so the binary and the login survive container recreates and are included in the
-restic backup (creds encrypted by restic).
+Claude Code is **baked into the image** at `/usr/local/bin/claude` (so a from-scratch box
+has it), authenticated with the Claude **Max subscription** (OAuth). The login lives in
+the persistent `/opt/data/.claude` volume — it survives recreates and is in the restic
+backup (creds encrypted). A data-dir copy (`/opt/data/.local/bin/claude`), if present
+from an earlier install, shadows the baked one via PATH; both work and share the login.
 
 ```bash
 ./scripts/claude-setup.sh   # install-if-missing + verify subscription auth
@@ -147,7 +148,7 @@ is tight, so prefer restic→R2 over accumulating local snapshots.
 
 | File | What |
 |---|---|
-| `image/Dockerfile` | `FROM nousresearch/hermes-agent` + Tailscale + Caddy + s6 services |
+| `image/Dockerfile` | `FROM nousresearch/hermes-agent` + Tailscale + Caddy + Claude Code + s6 |
 | `image/s6/{tailscaled,caddy}/` | s6-overlay longrun services |
 | `image/caddy/Caddyfile` | wiki (`:443`) + dashboard (`:8443`) over the tailnet |
 | `lib/common.sh` | env-driven config + `.env` loader |
