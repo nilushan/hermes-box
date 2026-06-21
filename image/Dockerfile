@@ -15,12 +15,22 @@ RUN apt-get update \
  && mv "/tmp/tailscale_${TAILSCALE_VERSION}_${TARGETARCH}/tailscaled" /usr/local/bin/tailscaled \
  && rm -rf /tmp/ts.tgz "/tmp/tailscale_${TAILSCALE_VERSION}_${TARGETARCH}" /var/lib/apt/lists/*
 
-# Add tailscaled as an s6-supervised longrun service alongside Hermes (main-hermes,
-# dashboard). It restarts if it dies; state lives in the /var/lib/tailscale volume.
+# Caddy — reverse proxy / static file server, fronts the wiki + Hermes dashboard over
+# the tailnet with a Tailscale-issued TLS cert (replicates the Raspberry Pi setup).
+ARG CADDY_VERSION=2.8.4
+RUN curl -fsSL "https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/caddy_${CADDY_VERSION}_linux_${TARGETARCH}.tar.gz" -o /tmp/caddy.tgz \
+ && tar -xzf /tmp/caddy.tgz -C /usr/local/bin caddy \
+ && rm -f /tmp/caddy.tgz
+
+# s6-supervised services alongside Hermes (main-hermes, dashboard): tailscaled + caddy.
 COPY s6/tailscaled/type /etc/s6-overlay/s6-rc.d/tailscaled/type
 COPY s6/tailscaled/run  /etc/s6-overlay/s6-rc.d/tailscaled/run
-RUN chmod +x /etc/s6-overlay/s6-rc.d/tailscaled/run \
- && touch /etc/s6-overlay/s6-rc.d/user/contents.d/tailscaled
+COPY s6/caddy/type      /etc/s6-overlay/s6-rc.d/caddy/type
+COPY s6/caddy/run       /etc/s6-overlay/s6-rc.d/caddy/run
+COPY caddy/Caddyfile    /etc/caddy/Caddyfile
+RUN chmod +x /etc/s6-overlay/s6-rc.d/tailscaled/run /etc/s6-overlay/s6-rc.d/caddy/run \
+ && touch /etc/s6-overlay/s6-rc.d/user/contents.d/tailscaled \
+          /etc/s6-overlay/s6-rc.d/user/contents.d/caddy
 
 # Entrypoint (/init) and CMD are inherited from the Hermes image; we pass
 # `gateway run` at `container run` time, same as run-hermes.sh.

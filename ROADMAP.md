@@ -26,14 +26,19 @@ backup-friendly root, fully reproducible from this repo. Supersedes the old stan
       agent disabled (`.plist.disabled`), Pi-era tailscale leftovers in `.hermes` removed.
 - [x] Portable (env + `.env`), by-role layout, scripted/tested, name `hermes-box`,
       launchd auto-start at login.
+- [x] **Caddy over the tailnet** (s6 service, Tailscale TLS cert, bound to tailnet IP):
+      serves the **wiki** (`https://<fqdn>/`) and the **Hermes dashboard**
+      (`https://<fqdn>:8443/`, Host/Origin rewrite). Replicates the Pi setup.
 
 ## Remaining phases
 
 - [ ] **Backups offsite** — `restic` → Cloudflare R2 (versioned, offsite). Local tar
       snapshots exist but the Mac disk is tight; this is the real backup. Needs R2 creds.
-- [ ] **Free Mac disk space** — the volume runs ~90–96% full; the fat Hermes image needs
-      headroom to rebuild. Operational, but it blocks `01-build.sh` when too full.
-- [ ] Caddy / reverse proxy if services need TLS / clean hostnames.
+- [ ] **Free Mac disk space** — the volume runs ~90% full; the fat Hermes image needs
+      headroom to rebuild. `scripts/builder-reset.sh` reclaims the BuildKit cache before
+      a build, but the Mac is genuinely tight.
+- [ ] (Deferred, not wanted now) host the `sites/` (ownstack, tanglinlaw) — Astro builds.
+- [ ] Bake `mkdocs` into the image so the wiki can rebuild in-box (currently host-built).
 
 ## How to resume in a new session
 

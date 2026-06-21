@@ -1,0 +1,27 @@
+#!/command/with-contenv sh
+# s6-overlay longrun: front the wiki + Hermes dashboard over the tailnet via Caddy.
+# Waits for tailscaled, fetches a Tailscale TLS cert, then runs Caddy bound to the
+# tailnet IP only (apps stay on loopback). Cert refreshes on each (re)start.
+
+# Wait for the tailscaled control socket.
+i=0; while [ ! -S /run/tailscale/tailscaled.sock ] && [ "$i" -lt 60 ]; do sleep 1; i=$((i+1)); done
+
+# Resolve the node FQDN + tailnet IPv4 (wait until the node is actually up).
+FQDN=""; TSIP=""; i=0
+while { [ -z "$FQDN" ] || [ -z "$TSIP" ]; } && [ "$i" -lt 60 ]; do
+  FQDN=$(tailscale status --json 2>/dev/null | python3 -c 'import json,sys
+try: print(json.load(sys.stdin)["Self"]["DNSName"].rstrip("."))
+except Exception: pass' 2>/dev/null)
+  TSIP=$(tailscale ip -4 2>/dev/null | head -1)
+  [ -n "$FQDN" ] && [ -n "$TSIP" ] && break
+  sleep 1; i=$((i+1))
+done
+
+# Issue/refresh the Tailscale cert (needs HTTPS enabled in the tailnet admin).
+mkdir -p /var/lib/caddy/certs
+tailscale cert --cert-file /var/lib/caddy/certs/site.crt \
+               --key-file  /var/lib/caddy/certs/site.key "$FQDN" 2>&1 \
+  || echo "caddy: 'tailscale cert' failed for '$FQDN' (enable HTTPS in the tailnet admin)"
+
+export TS_FQDN="$FQDN" TS_BIND="$TSIP"
+exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile

@@ -1,0 +1,24 @@
+{
+	auto_https off
+	admin off
+}
+
+# Wiki (MkDocs static site) over the tailnet, on :443.
+{$TS_FQDN}:443 {
+	bind {$TS_BIND}
+	tls /var/lib/caddy/certs/site.crt /var/lib/caddy/certs/site.key
+	encode gzip
+	root * /home/nilushan/wiki-site/_site
+	file_server
+}
+
+# Hermes dashboard (loopback app on :9119) over the tailnet, on :8443.
+# Host/Origin rewrite satisfies the dashboard's DNS-rebinding guard (HTTP + WebSocket).
+{$TS_FQDN}:8443 {
+	bind {$TS_BIND}
+	tls /var/lib/caddy/certs/site.crt /var/lib/caddy/certs/site.key
+	reverse_proxy 127.0.0.1:9119 {
+		header_up Host 127.0.0.1:9119
+		header_up Origin http://127.0.0.1:9119
+	}
+}

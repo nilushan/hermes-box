@@ -18,6 +18,8 @@ NAME="${HERMES_BOX_NAME:-hermes-box}"
 CPUS="${HERMES_BOX_CPUS:-4}"
 MEMORY="${HERMES_BOX_MEMORY:-4G}"
 TS_HOSTNAME="${HERMES_BOX_TS_HOSTNAME:-${NAME}}"
+# Full tailnet FQDN (for Caddy TLS + tests). Empty = test.sh skips the HTTPS checks.
+TS_FQDN="${HERMES_BOX_TS_FQDN:-}"
 
 # SSH login user inside the box. The Hermes image ships a 'hermes' user (uid 501).
 BOX_USER="${HERMES_BOX_USER:-hermes}"

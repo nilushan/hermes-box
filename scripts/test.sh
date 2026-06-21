@@ -42,6 +42,16 @@ rm -f "${HERMES_WORK_DIR}/${STAMP}"
 ck "SSH over tailnet (${BOX_USER}@${TS_HOSTNAME})" \
    "ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 ${BOX_USER}@${TS_HOSTNAME} true"
 
+# Caddy front (wiki + dashboard over the tailnet via Tailscale TLS). Skipped if no FQDN.
+if [ -n "${TS_FQDN}" ]; then
+  ck "wiki served (https://${TS_FQDN}/)" \
+     "test \"\$(curl -s -o /dev/null -m 12 -w '%{http_code}' https://${TS_FQDN}/ )\" = 200"
+  ck "dashboard via Caddy (https://${TS_FQDN}:8443/)" \
+     "test \"\$(curl -s -o /dev/null -m 12 -w '%{http_code}' https://${TS_FQDN}:8443/ )\" != 000"
+else
+  echo "SKIP: Caddy HTTPS checks (set HERMES_BOX_TS_FQDN in .env)"
+fi
+
 echo "============================================"
 if [ "${fail}" -eq 0 ]; then echo "ALL CHECKS PASSED"; else echo "SOME CHECKS FAILED"; fi
 exit "${fail}"

@@ -48,8 +48,10 @@ Scripts source config via `source "$(dirname "$0")/../lib/common.sh"`. Run scrip
 
 ## 4. Architecture (current)
 
-- The box IS the Hermes runtime: image `FROM nousresearch/hermes-agent` + Tailscale as
-  an s6-overlay service. One `container run` container = gateway + dashboard + tailscaled.
+- The box IS the Hermes runtime: image `FROM nousresearch/hermes-agent` + Tailscale +
+  Caddy as s6-overlay services. One `container run` container = Hermes (gateway/dashboard)
+  + tailscaled + caddy. Caddy fronts the wiki (:443) + dashboard (:8443) over the tailnet
+  with a Tailscale TLS cert, bound to the tailnet IP only.
 - `container run` (not `container machine`) → real `--volume` bind mounts;
   `--cap-add CAP_NET_ADMIN CAP_NET_RAW` for tailscaled's TUN.
 - Data root `~/AiInfra/hermes-box-data/` (`.hermes`→/opt/data, `hermes-home`→/home/nilushan).

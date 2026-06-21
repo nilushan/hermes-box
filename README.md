@@ -44,6 +44,22 @@ cp .env.example .env            # optional per-machine overrides
 Hermes UI/gateway: `http://localhost:9119`. Shell in the box:
 `container exec -it hermes-box bash`, or over the tailnet: `ssh hermes@hermes-box`.
 
+## Web (Caddy over the tailnet)
+
+Caddy runs as an s6 service in the box, bound to the **tailnet IP only**, terminating
+TLS with a **Tailscale-issued cert** (`tailscale cert`, `auto_https off`) — replicating
+the Raspberry Pi setup. Apps stay on loopback; Caddy is the only network listener.
+
+| URL | Serves |
+|---|---|
+| `https://<fqdn>/` | wiki (MkDocs static, from `wiki-site/_site`) |
+| `https://<fqdn>:8443/` | Hermes dashboard (proxy → `127.0.0.1:9119`, Host/Origin rewrite) |
+
+`<fqdn>` = the box's MagicDNS name (set `HERMES_BOX_TS_FQDN` in `.env`). The cert is
+fetched at container start (refreshes on restart). Wiki content lives in the mounted
+`hermes-home/wiki`; rebuild the static site with `mkdocs build` (mkdocs not yet baked
+into the image). The two `sites/` (ownstack, tanglinlaw) are intentionally **not** hosted.
+
 ## Data layout (consolidated, backup-friendly)
 
 ```
@@ -82,15 +98,16 @@ see disk note below). Given the Mac's low free space, don't accumulate local sna
 
 | File | What |
 |---|---|
-| `image/Dockerfile` | `FROM nousresearch/hermes-agent` + Tailscale (static) + s6 service |
-| `image/s6/tailscaled/` | s6-overlay longrun service that supervises `tailscaled` |
+| `image/Dockerfile` | `FROM nousresearch/hermes-agent` + Tailscale + Caddy + s6 services |
+| `image/s6/{tailscaled,caddy}/` | s6-overlay longrun services |
+| `image/caddy/Caddyfile` | wiki (`:443`) + dashboard (`:8443`) over the tailnet |
 | `lib/common.sh` | env-driven config + `.env` loader |
 | `scripts/00`–`04` | prereqs / build / run / tailscale-up / verify |
 | `scripts/migrate-data.sh` | one-time: consolidate existing data into the data root |
 | `scripts/backup.sh` / `restore.sh` | snapshot / restore the data root |
 | `scripts/test.sh` | canonical re-runnable health check |
 | `scripts/boot.sh` + `autostart-*.sh` | launchd auto-start at login |
-| `scripts/builder-stop.sh` | optional/manual: stop the BuildKit builder to free RAM |
+| `scripts/builder-stop.sh` / `builder-reset.sh` | stop / delete BuildKit (free RAM / disk) |
 | `CLAUDE.md` / `ROADMAP.md` | conventions / plan + status |
 
 ## Auto-start on boot
