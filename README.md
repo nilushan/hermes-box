@@ -73,13 +73,21 @@ so it's excluded from data backups.
 
 ## Backups
 
+**Offsite (restic → Cloudflare R2)** — encrypted, versioned, the real backup:
 ```bash
-./scripts/backup.sh             # timestamped tar.gz of the data root into the backups dir
-./scripts/restore.sh [archive]  # restore newest (or named) snapshot; box must be stopped
+cp restic.env.example restic.env   # fill R2 repo URL + keys + a restic password (gitignored)
+./scripts/restic-backup.sh         # init (first run) + backup + prune (7d/4w/6m retention)
+./scripts/restic-snapshots.sh      # list snapshots + repo size
+./scripts/restic-restore.sh [snap] [target]   # restore (default: latest -> ~/hermes-box-restore)
 ```
-Caches (`.cache .npm node_modules .playwright`) are excluded. Local snapshots are the
-stopgap; **offsite restic→Cloudflare R2 is the planned next step** (and important here —
-see disk note below). Given the Mac's low free space, don't accumulate local snapshots.
+
+**Local (tar snapshot)** — quick stopgap on the same disk:
+```bash
+./scripts/backup.sh             # timestamped tar.gz into the backups dir
+./scripts/restore.sh [archive]  # restore newest (or named); box must be stopped
+```
+Both exclude regenerable caches (`.cache .npm node_modules .playwright`). The Mac disk
+is tight, so prefer restic→R2 over accumulating local snapshots.
 
 ## Configuration (all optional — see `.env.example`)
 

@@ -10,12 +10,11 @@ ts="${1:-$(date +%Y%m%d-%H%M%S)}"
 mkdir -p "${BACKUP_DIR}"
 archive="${BACKUP_DIR}/hermes-box-data-${ts}.tar.gz"
 
-# Skip regenerable caches to keep snapshots lean (override with HERMES_BOX_BACKUP_EXCLUDES).
-: "${HERMES_BOX_BACKUP_EXCLUDES:=.cache .npm node_modules .playwright}"
-ex=""; for e in ${HERMES_BOX_BACKUP_EXCLUDES}; do ex="${ex} --exclude=${e}"; done
+# Skip regenerable caches to keep snapshots lean (BACKUP_EXCLUDES from lib/common.sh).
+ex=""; for e in ${BACKUP_EXCLUDES}; do ex="${ex} --exclude=${e}"; done
 
 echo "Backing up ${DATA_ROOT} -> ${archive}"
-echo "  excluding: ${HERMES_BOX_BACKUP_EXCLUDES}"
+echo "  excluding: ${BACKUP_EXCLUDES}"
 # shellcheck disable=SC2086
 tar -C "$(dirname "${DATA_ROOT}")" ${ex} -czf "${archive}" "$(basename "${DATA_ROOT}")"
 echo "Done: $(du -h "${archive}" | cut -f1)  ${archive}"

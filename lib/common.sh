@@ -38,8 +38,10 @@ DATA_ROOT="${HERMES_BOX_DATA_ROOT:-${HOME}/AiInfra/hermes-box-data}"
 HERMES_DATA_DIR="${DATA_ROOT}/.hermes"
 HERMES_WORK_DIR="${DATA_ROOT}/hermes-home"
 
-# Where backup snapshots are written (kept OUTSIDE the data root).
+# Where local tar snapshots are written (kept OUTSIDE the data root).
 BACKUP_DIR="${HERMES_BOX_BACKUP_DIR:-${HOME}/AiInfra/hermes-box-backups}"
+# Regenerable paths excluded from backups (local tar + restic). Space-separated names.
+BACKUP_EXCLUDES="${HERMES_BOX_BACKUP_EXCLUDES:-.cache .npm node_modules .playwright}"
 
 # Persisted Tailscale identity. MUST be a named volume, not a host bind mount:
 # tailscaled chmods its state dir to 0700, which virtiofs bind mounts reject

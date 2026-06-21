@@ -3,3 +3,6 @@
 
 # Local logs
 *.log
+
+# restic/R2 credentials (secrets)
+restic.env
