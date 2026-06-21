@@ -75,7 +75,8 @@ so it's excluded from data backups.
 
 **Offsite (restic → Cloudflare R2)** — encrypted, versioned, the real backup:
 ```bash
-cp restic.env.example restic.env   # fill R2 repo URL + keys + a restic password (gitignored)
+cp cf.env.example cf.env           # fill CF_API_TOKEN (R2 Edit) + CF_ACCOUNT_ID (gitignored)
+./scripts/cf-r2-setup.sh           # creates the R2 bucket + writes restic.env (S3 creds)
 ./scripts/restic-backup.sh         # init (first run) + backup + prune (7d/4w/6m retention)
 ./scripts/restic-snapshots.sh      # list snapshots + repo size
 ./scripts/restic-restore.sh [snap] [target]   # restore (default: latest -> ~/hermes-box-restore)

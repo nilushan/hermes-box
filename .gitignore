@@ -6,3 +6,6 @@
 
 # restic/R2 credentials (secrets)
 restic.env
+
+# Cloudflare API credentials (secrets)
+cf.env
