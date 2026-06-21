@@ -16,11 +16,12 @@ data root. Supersedes the old standalone `hermes` container / `run-hermes.sh`.
 ## Layout
 
 ```
-image/      build context — Dockerfile + s6/tailscaled/{type,run}
+image/      build context — Dockerfile + s6/{tailscaled,caddy}/ + caddy/Caddyfile
 lib/        common.sh — env-driven config + .env loader
 scripts/    00–04, test.sh, migrate-data.sh, backup.sh, restore.sh,
-            boot.sh, autostart-*.sh, builder-stop.sh
-README.md  CLAUDE.md  ROADMAP.md  .env.example   (root: docs + config)
+            cf-r2-setup.sh, restic-backup.sh, restic-restore.sh, restic-snapshots.sh,
+            restic-schedule-*.sh, boot.sh, autostart-*.sh, builder-stop.sh, builder-reset.sh
+README.md  CLAUDE.md  ROADMAP.md  .env.example  cf.env.example  restic.env.example
 ```
 
 ## Conventions
@@ -117,7 +118,10 @@ is tight, so prefer restic→R2 over accumulating local snapshots.
 | `lib/common.sh` | env-driven config + `.env` loader |
 | `scripts/00`–`04` | prereqs / build / run / tailscale-up / verify |
 | `scripts/migrate-data.sh` | one-time: consolidate existing data into the data root |
-| `scripts/backup.sh` / `restore.sh` | snapshot / restore the data root |
+| `scripts/backup.sh` / `restore.sh` | local tar snapshot / restore of the data root |
+| `scripts/cf-r2-setup.sh` | create the R2 bucket + derive restic S3 creds (from `cf.env`) |
+| `scripts/restic-backup.sh` / `restic-restore.sh` / `restic-snapshots.sh` | offsite backup to R2 |
+| `scripts/restic-schedule-install.sh` / `-uninstall.sh` | launchd daily restic backup |
 | `scripts/test.sh` | canonical re-runnable health check |
 | `scripts/boot.sh` + `autostart-*.sh` | launchd auto-start at login |
 | `scripts/builder-stop.sh` / `builder-reset.sh` | stop / delete BuildKit (free RAM / disk) |
