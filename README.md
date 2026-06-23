@@ -11,6 +11,35 @@ and reachable over Tailscale SSH. Its state and work folder are bind-mounted fro
 consolidated, backup-friendly data root, and the whole lifecycle — build, run, back up,
 auto-start at login — is driven by numbered, re-runnable scripts.
 
+## Motivation
+
+I wanted a Hermes-style **autonomous AI agent** running **always-on in the background** —
+a *headless, long-running agentic AI*, not a chat window I sit in front of. The idea: hand
+it a brief ("here's the customer, here's the project, here's the direction") and let it go
+off and *build* the thing — a website demo, a prototype, a proof of concept — without me
+babysitting every step.
+
+The agent was the easy part. The real question was **where to run it**, and I worked
+through the options:
+
+- **Cloud VM** — simplest to stand up, but I'd be renting compute 24/7 for something
+  that's idle most of the time, with my data living on someone else's box.
+- **Raspberry Pi** — cheap, always-on, entirely mine. I actually deployed here first and
+  had it running — but the Pi just doesn't have the muscle for real dev work. Building and
+  running an Astro site in dev mode was painfully slow.
+- **Straight onto the Mac mini (M1)** — all the power I needed, but I wasn't about to let
+  an autonomous agent with shell access run loose on my actual machine.
+- **Docker on the Mac mini** — proper isolation, but Docker Desktop's VM layer is heavy on
+  macOS.
+- **Apple's native `container` on the Mac mini** — where I landed.
+
+The Mac mini M1 has the horsepower the Pi lacked, and Apple's `container` runtime gives me
+a lightweight, isolated box that taps into it **without compromising the host**. So the
+agent runs **always-on**, **comes back up on reboot**, and its accumulated memory and work
+are **backed up offsite and encrypted** — a disk failure shouldn't wipe out everything it
+has learned and built. This repo is that setup end to end, scripted so it's reproducible
+rather than a pile of manual steps I'd never remember.
+
 ## Highlights
 
 - **One image, supervised properly.** `FROM nousresearch/hermes-agent`, with Tailscale
