@@ -53,6 +53,36 @@ so it's excluded from data backups.
 
 ## Backups
 
+```mermaid
+flowchart TB
+  subgraph host["🖥️ macOS host"]
+    direction TB
+    timer["⏰ launchd timer — daily 03:00"]
+    restic["🔐 restic"]
+    subgraph dataroot["📁 data root — ~/AiInfra/hermes-box-data"]
+      direction LR
+      d1[".hermes/"]
+      d2["hermes-home/"]
+    end
+    secrets["restic.env / cf.env<br/>gitignored secrets"]
+  end
+  r2[("☁️ Cloudflare R2<br/>encrypted · versioned bucket")]
+
+  timer == triggers ==> restic
+  dataroot -. "read (box stays up)" .-> restic
+  secrets -. "repo URL + R2 keys" .-> restic
+  restic == "encrypt · dedup · upload<br/>retain 7d / 4w / 6m" ==> r2
+
+  classDef ext fill:#e8f0fe,stroke:#1a73e8,color:#174ea6;
+  classDef store fill:#fff4e5,stroke:#f59e0b,color:#92400e;
+  classDef tool fill:#fce8e6,stroke:#ea4335,color:#a50e0e;
+  class r2 ext;
+  class d1,d2,secrets store;
+  class restic,timer tool;
+  style host fill:#fafafa,stroke:#9ca3af;
+  style dataroot fill:#fff8ef,stroke:#f59e0b;
+```
+
 **Offsite (restic → Cloudflare R2)** — encrypted, versioned, the real backup:
 ```bash
 cp cf.env.example cf.env           # fill CF_API_TOKEN (R2 Edit) + CF_ACCOUNT_ID (gitignored)

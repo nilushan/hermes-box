@@ -32,72 +32,60 @@ auto-start at login — is driven by numbered, re-runnable scripts.
 ```mermaid
 flowchart TB
   user["👤 You — laptop / phone"]
-  tsnet{{"🔒 Tailscale tailnet<br/>identity · MagicDNS · WireGuard"}}
-  r2[("☁️ Cloudflare R2<br/>encrypted backup bucket")]
+  tsnet{{"🔒 Tailscale tailnet<br/>WireGuard · MagicDNS · SSO identity"}}
 
   subgraph host["🖥️ macOS host"]
     direction TB
-    local["localhost:9119 / :8642<br/>(host-only, --publish)"]
-
-    subgraph dataroot["📁 data root — ~/AiInfra/hermes-box-data"]
-      d_hermes[".hermes/ — Hermes state"]
-      d_home["hermes-home/ — work folder + wiki"]
-    end
-    tsvol[("📦 named volume<br/>hermes-box-tsstate")]
-
-    restic["🔐 restic (on host)"]
-    timer["⏰ launchd — daily 03:00<br/>+ boot.sh at login"]
-
     subgraph container["📦 Apple container 'hermes-box' — container run"]
       direction TB
       subgraph s6["s6-overlay — supervises every service"]
-        hermes["Hermes gateway + dashboard<br/>127.0.0.1:9119"]
-        caddy["Caddy reverse proxy<br/>binds tailnet IP only<br/>:443 wiki · :8443 dashboard"]
+        direction TB
         tailscaled["tailscaled<br/>CAP_NET_ADMIN/RAW → TUN"]
+        caddy["Caddy — TLS, binds tailnet IP only<br/>:443 wiki · :8443 dashboard"]
+        hermes["Hermes gateway + dashboard<br/>127.0.0.1:9119"]
         claude["Claude Code (baked in)"]
       end
     end
+    subgraph storage["💾 host storage — mounted into the box"]
+      direction LR
+      d_hermes[".hermes/ → /opt/data"]
+      d_home["hermes-home/ → /home/hermes"]
+      tsvol[("tsstate → /var/lib/tailscale")]
+    end
   end
 
-  %% volume mounts (dotted)
-  d_hermes -. "bind → /opt/data" .-> hermes
-  d_home -. "bind → /home/hermes" .-> hermes
-  tsvol -. "named vol → /var/lib/tailscale" .-> tailscaled
+  %% secure access — everything arrives over the encrypted tailnet
+  user <-->|"join tailnet (SSO)"| tsnet
+  tailscaled <-->|"WireGuard mesh"| tsnet
+  user == "Tailscale SSH" ==> tailscaled
+  user == "HTTPS :443 / :8443" ==> caddy
 
-  %% inside the box (solid)
+  %% inside the box
   caddy -->|"reverse proxy (loopback)"| hermes
   caddy -. "tailscale cert (TLS)" .-> tailscaled
-  tailscaled <-->|"WireGuard mesh"| tsnet
-  local -. "published ports" .-> hermes
 
-  %% secure access (thick)
-  user <-->|"join tailnet (SSO identity)"| tsnet
-  user == "Tailscale SSH — ssh hermes@hermes-box" ==> tailscaled
-  user == "HTTPS :443 / :8443 over tailnet" ==> caddy
-
-  %% backups (thick)
-  timer == triggers ==> restic
-  restic -. "read data root" .-> dataroot
-  restic == "encrypt · dedup · upload" ==> r2
+  %% mounts
+  d_hermes -. bind .-> hermes
+  d_home -. bind .-> hermes
+  tsvol -. "named volume" .-> tailscaled
 
   classDef ext fill:#e8f0fe,stroke:#1a73e8,color:#174ea6;
   classDef store fill:#fff4e5,stroke:#f59e0b,color:#92400e;
   classDef svc fill:#e6f4ea,stroke:#34a853,color:#137333;
-  classDef tool fill:#fce8e6,stroke:#ea4335,color:#a50e0e;
-  class user,tsnet,r2 ext;
+  class user,tsnet ext;
   class d_hermes,d_home,tsvol store;
   class hermes,caddy,tailscaled,claude svc;
-  class restic,timer,local tool;
   style container fill:#eef2ff,stroke:#6366f1,stroke-width:2px;
   style s6 fill:#f5f3ff,stroke:#818cf8;
   style host fill:#fafafa,stroke:#9ca3af;
-  style dataroot fill:#fff8ef,stroke:#f59e0b;
+  style storage fill:#fff8ef,stroke:#f59e0b;
 ```
 
-**Reading the diagram** — dotted edges are mount points (host data → in-box paths),
-thick edges are the security-sensitive flows: all access arrives over the encrypted
-Tailscale tailnet (SSH to `tailscaled`, HTTPS to Caddy — never a public port), and
-backups are encrypted on the host by restic before they leave for Cloudflare R2.
+**Reading the diagram** — dotted edges are mount points (host data → in-box paths);
+thick edges are the security-sensitive access flows. Everything arrives over the
+encrypted Tailscale tailnet — SSH to `tailscaled`, HTTPS to Caddy, which binds the
+**tailnet IP only** — so the box never exposes a public port. (The backup pipeline is
+diagrammed in the [operations manual](docs/OPERATIONS.md#backups).)
 
 `container run` (not `container machine`) is used deliberately: it gives real `--volume`
 bind mounts of arbitrary host folders, and `--cap-add CAP_NET_ADMIN/CAP_NET_RAW` lets
