@@ -12,7 +12,7 @@ container rm -f "${NAME}" 2>/dev/null || true
 
 echo "Running '${NAME}' (Hermes gateway + Tailscale):"
 echo "  data : ${HERMES_DATA_DIR}  ->  /opt/data"
-echo "  work : ${HERMES_WORK_DIR}  ->  /home/nilushan"
+echo "  work : ${HERMES_WORK_DIR}  ->  ${WORK_MOUNT}"
 echo "  ts   : volume ${TS_STATE_VOLUME}  ->  /var/lib/tailscale"
 echo "  ports: ${GATEWAY_PORT}->9119 (gateway), ${DASHBOARD_PORT}->8642 (dashboard)"
 container run -d --name "${NAME}" \
@@ -23,7 +23,8 @@ container run -d --name "${NAME}" \
   --publish "${GATEWAY_PORT}:9119" \
   --publish "${DASHBOARD_PORT}:8642" \
   --volume "${HERMES_DATA_DIR}:/opt/data" \
-  --volume "${HERMES_WORK_DIR}:/home/nilushan" \
+  --volume "${HERMES_WORK_DIR}:${WORK_MOUNT}" \
+  --env HERMES_BOX_WIKI_ROOT="${WORK_MOUNT}/wiki-site/_site" \
   --volume "${TS_STATE_VOLUME}:/var/lib/tailscale" \
   "${IMAGE_TAG}" gateway run
 

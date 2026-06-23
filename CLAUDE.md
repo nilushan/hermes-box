@@ -57,6 +57,6 @@ Run as `./scripts/<name>.sh` or `./scripts/<group>/<name>.sh` from the repo root
   with a Tailscale TLS cert, bound to the tailnet IP only.
 - `container run` (not `container machine`) → real `--volume` bind mounts;
   `--cap-add CAP_NET_ADMIN CAP_NET_RAW` for tailscaled's TUN.
-- Data root `~/AiInfra/hermes-box-data/` (`.hermes`→/opt/data, `hermes-home`→/home/nilushan).
+- Data root `~/AiInfra/hermes-box-data/` (`.hermes`→/opt/data, `hermes-home`→`${WORK_MOUNT}`, default /home/hermes).
   Tailscale state in a **named volume** (bind mounts break its state-store `chmod`).
 - Heads-up: the Hermes image is large — keep disk headroom or `01-build.sh` can't import.

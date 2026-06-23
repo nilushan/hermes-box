@@ -23,5 +23,8 @@ tailscale cert --cert-file /var/lib/caddy/certs/site.crt \
                --key-file  /var/lib/caddy/certs/site.key "$FQDN" 2>&1 \
   || echo "caddy: 'tailscale cert' failed for '$FQDN' (enable HTTPS in the tailnet admin)"
 
+# Wiki document root inside the box (passed in at `container run` time; falls back to
+# the box user's home if unset). Tracks the work-folder mount path.
 export TS_FQDN="$FQDN" TS_BIND="$TSIP"
+export WIKI_ROOT="${HERMES_BOX_WIKI_ROOT:-/home/hermes/wiki-site/_site}"
 exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile

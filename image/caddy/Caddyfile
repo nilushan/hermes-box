@@ -8,7 +8,7 @@
 	bind {$TS_BIND}
 	tls /var/lib/caddy/certs/site.crt /var/lib/caddy/certs/site.key
 	encode gzip
-	root * /home/nilushan/wiki-site/_site
+	root * {$WIKI_ROOT}
 	file_server
 }
 

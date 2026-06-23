@@ -24,6 +24,10 @@ TS_FQDN="${HERMES_BOX_TS_FQDN:-}"
 # SSH login user inside the box. The Hermes image ships a 'hermes' user (uid 501).
 BOX_USER="${HERMES_BOX_USER:-hermes}"
 
+# Where the host work folder is bind-mounted inside the box. Defaults to the box
+# user's home; override with HERMES_BOX_WORK_MOUNT for a different in-box path.
+WORK_MOUNT="${HERMES_BOX_WORK_MOUNT:-/home/${BOX_USER}}"
+
 # Hermes runtime settings (mirrors run-hermes.sh).
 PUID="${HERMES_BOX_PUID:-$(id -u)}"
 PGID="${HERMES_BOX_PGID:-$(id -g)}"
@@ -32,8 +36,8 @@ DASHBOARD_PORT="${HERMES_BOX_DASHBOARD_PORT:-8642}"
 
 # Consolidated, backup-friendly data root. Host subdirs keep their original names,
 # relocated under one root so it's one thing to back up/restore:
-#   ${DATA_ROOT}/.hermes      -> /opt/data       (Hermes state, was ~/.hermes)
-#   ${DATA_ROOT}/hermes-home  -> /home/nilushan  (work folder, was ~/AiInfra/hermes-home)
+#   ${DATA_ROOT}/.hermes      -> /opt/data        (Hermes state, was ~/.hermes)
+#   ${DATA_ROOT}/hermes-home  -> ${WORK_MOUNT}    (work folder, was ~/AiInfra/hermes-home)
 DATA_ROOT="${HERMES_BOX_DATA_ROOT:-${HOME}/AiInfra/hermes-box-data}"
 HERMES_DATA_DIR="${DATA_ROOT}/.hermes"
 HERMES_WORK_DIR="${DATA_ROOT}/hermes-home"

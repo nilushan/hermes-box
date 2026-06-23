@@ -1,5 +1,10 @@
 # Hermes box
 
+> Self-hosted, fully scripted runtime for the [Hermes](https://hub.docker.com/r/nousresearch/hermes-agent)
+> AI agent on macOS — reachable over a private [Tailscale](https://tailscale.com) tailnet, with
+> TLS-fronted web access and encrypted offsite backups. Everything (build, run, backup, auto-start)
+> is an idempotent, committed shell script; nothing is configured by hand.
+
 **The box IS the Hermes runtime.** A single `container run` container on macOS that
 runs the Hermes gateway *and* Tailscale, reachable over the tailnet via Tailscale SSH,
 with the work folder and Hermes data bind-mounted from a consolidated, backup-friendly
@@ -60,7 +65,7 @@ the Raspberry Pi setup. Apps stay on loopback; Caddy is the only network listene
 `<fqdn>` = the box's MagicDNS name (set `HERMES_BOX_TS_FQDN` in `.env`). The cert is
 fetched at container start (refreshes on restart). Wiki content lives in the mounted
 `hermes-home/wiki`; rebuild the static site with `mkdocs build` (mkdocs not yet baked
-into the image). The two `sites/` (ownstack, tanglinlaw) are intentionally **not** hosted.
+into the image). Any other static `sites/` in the work folder are intentionally **not** hosted.
 
 ## Claude Code (in the box)
 
@@ -85,7 +90,7 @@ container exec -it --user hermes hermes-box sh -lc 'export HOME=/opt/data; \
 ```
 ~/AiInfra/hermes-box-data/         # = HERMES_BOX_DATA_ROOT
   .hermes/        ->  /opt/data        (Hermes state, was ~/.hermes)
-  hermes-home/    ->  /home/nilushan   (work folder, was ~/AiInfra/hermes-home)
+  hermes-home/    ->  /home/hermes     (work folder; in-box path = HERMES_BOX_WORK_MOUNT)
 ```
 Tailscale identity lives in a **named volume** (`<name>-tsstate`), not a bind mount
 (tailscaled chmods its state dir to 0700, which virtiofs rejects). It's re-authable,
@@ -203,7 +208,4 @@ headless Mac mini enable auto-login (or stays-logged-in) for true post-reboot st
 
 ```bash
 container rm -f hermes-box        # stop the runtime (data is safe in the data root)
-# To roll back to the old standalone Hermes: re-enable the disabled launchd agent
-#   mv ~/Library/LaunchAgents/com.ownstack.hermes.plist.disabled ...plist  (note: it
-#   expects data at the OLD ~/.hermes path, which migrate-data.sh moved)
 ```

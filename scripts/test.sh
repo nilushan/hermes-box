@@ -25,15 +25,15 @@ ck "Hermes gateway responds on :${GATEWAY_PORT}" \
 # Data + work bind mounts present.
 ck "Hermes data mounted (/opt/data)" \
    "container exec ${NAME} test -e /opt/data"
-ck "work folder mounted (/home/nilushan)" \
-   "container exec ${NAME} test -d /home/nilushan"
+ck "work folder mounted (${WORK_MOUNT})" \
+   "container exec ${NAME} test -d ${WORK_MOUNT}"
 
 # Real bidirectional volume mount (work folder).
 STAMP=".hbox-test-$$"
 echo "mac-$$" > "${HERMES_WORK_DIR}/${STAMP}"
 ck "box reads Mac-written file" \
-   "container exec ${NAME} grep -q 'mac-$$' /home/nilushan/${STAMP}"
-container exec "${NAME}" sh -c "echo box-$$ >> /home/nilushan/${STAMP}" 2>/dev/null || true
+   "container exec ${NAME} grep -q 'mac-$$' ${WORK_MOUNT}/${STAMP}"
+container exec "${NAME}" sh -c "echo box-$$ >> ${WORK_MOUNT}/${STAMP}" 2>/dev/null || true
 ck "Mac reads box-written append" \
    "grep -q 'box-$$' ${HERMES_WORK_DIR}/${STAMP}"
 rm -f "${HERMES_WORK_DIR}/${STAMP}"
