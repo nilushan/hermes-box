@@ -5,8 +5,9 @@
 > TLS-fronted web access and encrypted offsite backups. Everything (build, run, backup, auto-start)
 > is an idempotent, committed shell script; nothing is configured by hand.
 
-**The box *is* the Hermes runtime.** A single container on macOS (Apple's `container`
-CLI) runs the Hermes gateway and `tailscaled` side by side, joined to a private tailnet
+**The box *is* the Hermes runtime.** A single container on macOS (Apple's
+[`container`](https://github.com/apple/container) CLI) runs the Hermes gateway and
+`tailscaled` side by side, joined to a private tailnet
 and reachable over Tailscale SSH. Its state and work folder are bind-mounted from one
 consolidated, backup-friendly data root, and the whole lifecycle — build, run, back up,
 auto-start at login — is driven by numbered, re-runnable scripts.
@@ -119,6 +120,20 @@ diagrammed in the [operations manual](docs/OPERATIONS.md#backups).)
 `container run` (not `container machine`) is used deliberately: it gives real `--volume`
 bind mounts of arbitrary host folders, and `--cap-add CAP_NET_ADMIN/CAP_NET_RAW` lets
 `tailscaled` create its TUN device.
+
+## Requirements
+
+- **An Apple Silicon Mac.** This is built on [Apple's `container`](https://github.com/apple/container)
+  runtime, which is *Apple-silicon-only* — it won't run on Intel Macs. (I run it on a Mac
+  mini M1.)
+- **macOS 26** is the supported target — `container` leans on virtualization and networking
+  features introduced there; it can run on macOS 15 Sequoia with reduced functionality.
+- **Tailscale** account (free tier is fine) for private tailnet access, and — optionally —
+  a **Cloudflare R2** bucket for encrypted offsite backups.
+
+> Apple's `container` reached **v1.0.0 on June 9, 2026**, only weeks before this writing —
+> so this project is an early adopter of a brand-new, fast-moving runtime. Expect the
+> upstream tool to keep changing; pin to a known-good version if you need stability.
 
 ## Quick start
 
