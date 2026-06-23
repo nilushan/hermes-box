@@ -29,23 +29,75 @@ auto-start at login — is driven by numbered, re-runnable scripts.
 
 ## Architecture
 
+```mermaid
+flowchart TB
+  user["👤 You — laptop / phone"]
+  tsnet{{"🔒 Tailscale tailnet<br/>identity · MagicDNS · WireGuard"}}
+  r2[("☁️ Cloudflare R2<br/>encrypted backup bucket")]
+
+  subgraph host["🖥️ macOS host"]
+    direction TB
+    local["localhost:9119 / :8642<br/>(host-only, --publish)"]
+
+    subgraph dataroot["📁 data root — ~/AiInfra/hermes-box-data"]
+      d_hermes[".hermes/ — Hermes state"]
+      d_home["hermes-home/ — work folder + wiki"]
+    end
+    tsvol[("📦 named volume<br/>hermes-box-tsstate")]
+
+    restic["🔐 restic (on host)"]
+    timer["⏰ launchd — daily 03:00<br/>+ boot.sh at login"]
+
+    subgraph container["📦 Apple container 'hermes-box' — container run"]
+      direction TB
+      subgraph s6["s6-overlay — supervises every service"]
+        hermes["Hermes gateway + dashboard<br/>127.0.0.1:9119"]
+        caddy["Caddy reverse proxy<br/>binds tailnet IP only<br/>:443 wiki · :8443 dashboard"]
+        tailscaled["tailscaled<br/>CAP_NET_ADMIN/RAW → TUN"]
+        claude["Claude Code (baked in)"]
+      end
+    end
+  end
+
+  %% volume mounts (dotted)
+  d_hermes -. "bind → /opt/data" .-> hermes
+  d_home -. "bind → /home/hermes" .-> hermes
+  tsvol -. "named vol → /var/lib/tailscale" .-> tailscaled
+
+  %% inside the box (solid)
+  caddy -->|"reverse proxy (loopback)"| hermes
+  caddy -. "tailscale cert (TLS)" .-> tailscaled
+  tailscaled <-->|"WireGuard mesh"| tsnet
+  local -. "published ports" .-> hermes
+
+  %% secure access (thick)
+  user <-->|"join tailnet (SSO identity)"| tsnet
+  user == "Tailscale SSH — ssh hermes@hermes-box" ==> tailscaled
+  user == "HTTPS :443 / :8443 over tailnet" ==> caddy
+
+  %% backups (thick)
+  timer == triggers ==> restic
+  restic -. "read data root" .-> dataroot
+  restic == "encrypt · dedup · upload" ==> r2
+
+  classDef ext fill:#e8f0fe,stroke:#1a73e8,color:#174ea6;
+  classDef store fill:#fff4e5,stroke:#f59e0b,color:#92400e;
+  classDef svc fill:#e6f4ea,stroke:#34a853,color:#137333;
+  classDef tool fill:#fce8e6,stroke:#ea4335,color:#a50e0e;
+  class user,tsnet,r2 ext;
+  class d_hermes,d_home,tsvol store;
+  class hermes,caddy,tailscaled,claude svc;
+  class restic,timer,local tool;
+  style container fill:#eef2ff,stroke:#6366f1,stroke-width:2px;
+  style s6 fill:#f5f3ff,stroke:#818cf8;
+  style host fill:#fafafa,stroke:#9ca3af;
+  style dataroot fill:#fff8ef,stroke:#f59e0b;
 ```
-                         macOS host
-  ┌──────────────────────────────────────────────────────────┐
-  │  container "hermes-box"  (Apple container run)             │
-  │                                                            │
-  │   s6-overlay supervises:                                   │
-  │     • main-hermes / dashboard   (Hermes gateway → :9119)   │
-  │     • tailscaled                (joins the private tailnet) │
-  │     • caddy                     (TLS, tailnet IP only)     │
-  │                                                            │
-  │   :443  → wiki (static)        :8443 → Hermes dashboard    │
-  └───────────────┬───────────────────────────┬──────────────┘
-        bind mounts │                 named volume │
-   ~/AiInfra/hermes-box-data/            tailscale identity
-     .hermes/  →  /opt/data
-     hermes-home/ →  /home/hermes (work folder)
-```
+
+**Reading the diagram** — dotted edges are mount points (host data → in-box paths),
+thick edges are the security-sensitive flows: all access arrives over the encrypted
+Tailscale tailnet (SSH to `tailscaled`, HTTPS to Caddy — never a public port), and
+backups are encrypted on the host by restic before they leave for Cloudflare R2.
 
 `container run` (not `container machine`) is used deliberately: it gives real `--volume`
 bind mounts of arbitrary host folders, and `--cap-add CAP_NET_ADMIN/CAP_NET_RAW` lets
