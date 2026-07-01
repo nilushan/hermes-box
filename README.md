@@ -73,7 +73,7 @@ flowchart TB
         tailscaled["tailscaled<br/>CAP_NET_ADMIN/RAW → TUN"]
         caddy["Caddy — TLS, binds tailnet IP only<br/>:443 wiki · :8443 dashboard"]
         hermes["Hermes gateway + dashboard<br/>127.0.0.1:9119"]
-        claude["Claude Code (baked in)"]
+        claude["Claude Code + tmux (baked in)"]
       end
     end
     subgraph storage["💾 host storage — mounted into the box"]

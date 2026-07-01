@@ -13,6 +13,8 @@ ck "container '${NAME}' is running" \
    "container list 2>/dev/null | grep -E '(^|[[:space:]])${NAME}([[:space:]]|\$)' | grep -q running"
 ck "box user '${BOX_USER}' exists" \
    "container exec ${NAME} id ${BOX_USER}"
+ck "tmux installed (for detachable sessions)" \
+   "container exec ${NAME} tmux -V"
 ck "tailscaled state store healthy" \
    "! container exec ${NAME} tailscale status 2>&1 | grep -qi 'state store'"
 ck "tailscale is up (not logged out/stopped)" \

@@ -4,11 +4,12 @@
 FROM nousresearch/hermes-agent:latest
 
 # Tailscale static binaries (container-friendly; no systemd/apt-postinst issues),
-# plus the net tools tailscaled needs to manage the TUN/firewall.
+# plus the net tools tailscaled needs to manage the TUN/firewall. tmux is bundled
+# here too so interactive `ssh` sessions can hold long-running Hermes/Claude jobs.
 ARG TAILSCALE_VERSION=1.98.4
 ARG TARGETARCH=arm64
 RUN apt-get update \
- && apt-get install -y --no-install-recommends curl ca-certificates iptables iproute2 \
+ && apt-get install -y --no-install-recommends curl ca-certificates iptables iproute2 tmux \
  && curl -fsSL "https://pkgs.tailscale.com/stable/tailscale_${TAILSCALE_VERSION}_${TARGETARCH}.tgz" -o /tmp/ts.tgz \
  && tar -xzf /tmp/ts.tgz -C /tmp \
  && mv "/tmp/tailscale_${TAILSCALE_VERSION}_${TARGETARCH}/tailscale"  /usr/local/bin/tailscale \
