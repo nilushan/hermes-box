@@ -15,6 +15,8 @@ ck "box user '${BOX_USER}' exists" \
    "container exec ${NAME} id ${BOX_USER}"
 ck "tmux installed (for detachable sessions)" \
    "container exec ${NAME} tmux -V"
+ck "gh (GitHub CLI) installed" \
+   "container exec ${NAME} gh --version"
 ck "tailscaled state store healthy" \
    "! container exec ${NAME} tailscale status 2>&1 | grep -qi 'state store'"
 ck "tailscale is up (not logged out/stopped)" \

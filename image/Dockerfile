@@ -23,6 +23,14 @@ RUN curl -fsSL "https://github.com/caddyserver/caddy/releases/download/v${CADDY_
  && tar -xzf /tmp/caddy.tgz -C /usr/local/bin caddy \
  && rm -f /tmp/caddy.tgz
 
+# GitHub CLI (`gh`) — lets the in-box agent clone/push/PR against GitHub. Not in Debian
+# main, so grab the pinned static release tarball (same approach as Tailscale/Caddy).
+ARG GH_VERSION=2.95.0
+RUN curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${TARGETARCH}.tar.gz" -o /tmp/gh.tgz \
+ && tar -xzf /tmp/gh.tgz -C /tmp \
+ && mv "/tmp/gh_${GH_VERSION}_linux_${TARGETARCH}/bin/gh" /usr/local/bin/gh \
+ && rm -rf /tmp/gh.tgz "/tmp/gh_${GH_VERSION}_linux_${TARGETARCH}"
+
 # Claude Code (subscription CLI) baked in, so a fresh box has it even without restored
 # data. The OAuth login lives in /opt/data/.claude (persistent volume), not the image.
 # Installs to /usr/local/bin/claude (the image has Node). A data-dir install, if present,
